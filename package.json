@@ -1,0 +1,31 @@
+{
+    "author": "MTKft.",
+    "dependencies": {
+        "@rockiey/pandasjs": "^1.0.1"
+    },
+    "keywords": [
+        "pebble-app"
+    ],
+    "name": "bkk-fut-r",
+    "pebble": {
+        "capabilities": [
+            "configurable"
+        ],
+        "displayName": "BKK FUT\u00c1R",
+        "enableMultiJS": true,
+        "messageKeys": [],
+        "projectType": "moddable",
+        "resources": {
+            "media": []
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "emery"
+        ],
+        "uuid": "6a04de35-76a5-4fd4-a1b9-4bf9ebbe86f7",
+        "watchapp": {
+            "watchface": true
+        }
+    },
+    "version": "0.1.0"
+}
