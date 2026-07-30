@@ -84,7 +84,7 @@ const auxFont = new render.Font("Gothic-Bold", 14);
 
 // Colors
 const black = render.makeColor(0, 0, 0);
-const gray  = render.makeColor(80, 80, 80);
+const gray  = render.makeColor(60, 60, 60);
 const orang = render.makeColor(210, 150, 30);
 const white = render.makeColor(255, 255, 255);
 
@@ -111,7 +111,7 @@ function draw(event) {
 
   render.begin();
   render.fillRectangle(black, 0, 0, render.width, render.height);
-  render.fillRectangle(gray, 20, 1.5*auxFont.height, render.width-40, render.height-(3*auxFont.height));
+  //render.fillRectangle(gray, 20, 1.5*auxFont.height, render.width-40, render.height-(3*auxFont.height));
 
   // Format time as HH:MM
   const hours = String(now.getHours()).padStart(2, "0");
@@ -141,8 +141,15 @@ function draw(event) {
   // you have basically 23 cap letters wide without even switching to Transit Board font; strongly consider two lines per entry (rt#,min,arrow on one row,
   // headsign below. still small for the headsign tbr but we shall ball i think)
   // on which note, revisit this heading later
-  render.drawText("Járat             Indulás", auxFont, white,
+  render.drawText("Járat", auxFont, white,
     20,
+    0.5*auxFont.height
+  );
+
+  const auxTopRight = "Indulás";
+  let auxTopRightWidth = render.getTextWidth(auxTopRight, auxFont);
+  render.drawText("Indulás", auxFont, white,
+    (render.width - auxTopRightWidth - 20),
     0.5*auxFont.height
   );
 
@@ -151,7 +158,7 @@ function draw(event) {
     (render.height - 1.25*auxFont.height)
   );
 
-  render.drawText("*MÁKOS TÉSZTA KFT.\nPEBBLE FUTÁR TESZTÜZEM\náéíóöőúüűÁÉÍÓÖŐÚÜŰ", DMIFont, orang,
+  render.drawText("*MÁKOS TÉSZTA KFT.*\nPEBBLE FUTÁR TESZTÜZEM\náéíóöőúüűÁÉÍÓÖŐÚÜŰ", DMIFont, orang,
     20,
     1.5 * auxFont.height
   );
