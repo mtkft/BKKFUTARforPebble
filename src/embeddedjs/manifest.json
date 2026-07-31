@@ -11,7 +11,7 @@
         "source": "./assets/transit-board",
         "size": 14,
         "monochrome": true,
-        "blocks": ["Basic Latin","Latin-1 Supplement"]
+        "blocks": ["Basic Latin","Latin-1 Supplement","Arrows"]
       }
     ]
   }

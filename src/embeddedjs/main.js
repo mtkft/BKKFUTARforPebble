@@ -117,12 +117,12 @@ let nD = 4;
 
 function flip() {
   // static test
-  flop = [{"shortName":"*","tripHeadsign":`MÁKOS TÉSZTA KFT.
+  /*flop = [{"shortName":"*","tripHeadsign":`MÁKOS TÉSZTA KFT.
 PEBBLE FUTÁR TESZTÜZEM
-áéíóöőúüűÁÉÍÓÖŐÚÜŰ`,"countdown":1,"standArrow":""}];
+áéíóöőúüűÁÉÍÓÖŐÚÜŰ`,"countdown":1,"standArrow":""}];*/
   // halfway proper board flipping test
   // how many departures to grab is precomputed above
-  //flop = testSign.slice(nD);
+  flop = testSign.slice(0,nD);
 }
 
 function draw(event) {
@@ -130,7 +130,6 @@ function draw(event) {
 
   render.begin();
   render.fillRectangle(black, 0, 0, render.width, render.height);
-  //render.fillRectangle(gray, 20, 1.5*auxFont.height, render.width-40, render.height-(3*auxFont.height));
   // recompute sizing stuff
   grayBox['height'] = render.height-2*grayBox['top'];
   grayBox['doubleRow'] = 2*DMIFont.height;
@@ -174,9 +173,17 @@ function draw(event) {
 
   // sign rows
   for (let n = 0; n < flop.length; n++) {
+  // left corner and displaced-downward middle
     render.drawText(`${flop[n]['shortName']}
 ${flop[n]['tripHeadsign']}`, DMIFont, orang,
       20,
+      grayBox['top']+n*grayBox['doubleRow']
+    );
+    // right corner
+    let rowRC = `${String(flop[n]['countdown'])}`;//${flop[n]['standArrow']}`;
+    let rcWidth = render.getTextWidth(rowRC, DMIFont);
+    render.drawText(rowRC, DMIFont, orang,
+      (render.width - rcWidth - 20),
       grayBox['top']+n*grayBox['doubleRow']
     );
   }
