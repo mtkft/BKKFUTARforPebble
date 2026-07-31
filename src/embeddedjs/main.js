@@ -2,6 +2,12 @@ import Poco from "commodetto/Poco";
 import parseBMF from "commodetto/parseBMF";
 import parseRLE from "commodetto/parseRLE";
 
+const DEFAULT_SETTINGS = {
+  'showSeconds': false
+};
+
+let settings = DEFAULT_SETTINGS;
+
 const places = {
   'CLARK0': {
     'placeName': 'Clark Ádám tér (2/16-105-178-210/B Alagút/Vár felé)',
@@ -78,8 +84,9 @@ const render = new Poco(screen);
 
 // Fonts
 const DMIFont = new render.Font("Gothic-Regular", 18);
+const DMIFontXL = new render.Font("Gothic-Regular", 24);
 //const DMIFont = getFont("transit-board", 18); // was new render.Font originally
-const auxFont = new render.Font("Gothic-Bold", 14);
+const auxFont = new render.Font("Gothic-Bold", 18);
 
 // Colors
 const black = render.makeColor(0, 0, 0);
@@ -109,7 +116,7 @@ const chosenSpot="BATYI0";
 let flop = [];
 let grayBox = {
   "top": 1.5*auxFont.height,
-  "overTop": 0.5*auxFont.height,
+  "overTop": 0.25*auxFont.height,
   "height": render.height-(3*auxFont.height),
   "doubleRow": 2*DMIFont.height
 };
@@ -130,25 +137,11 @@ function draw(event) {
 
   render.begin();
   render.fillRectangle(black, 0, 0, render.width, render.height);
+
   // recompute sizing stuff
   grayBox['height'] = render.height-2*grayBox['top'];
   grayBox['doubleRow'] = 2*DMIFont.height;
-  nD = grayBox['height']/grayBox['doubleRow'] - 1;
-
-  // Format date (now also time) as "YYYY. MRoman. DD. DName HH:MM"
-  const hours = String(now.getHours()).padStart(2, "0");
-  const minutes = String(now.getMinutes()).padStart(2, "0");
-  const seconds = String(now.getSeconds()).padStart(2, "0");
-  const dayName = DAYS[now.getDay()];
-  //const monthName = MONTHS[now.getMonth()]; // numeric month is better for digital displaying, it seems to me
-  const infoStr = `${String(now.getFullYear())}. ${String(now.getMonth()).padStart(2, "0")}. ${String(now.getDate()).padStart(2, "0")}. ${dayName} ${hours}:${minutes}:${seconds}`;
-
-  // Draw datetime below the departure board
-  let infoWidth = render.getTextWidth(infoStr, DMIFont);
-  render.drawText(infoStr, DMIFont, orang,
-    (render.width - infoWidth - 20),
-    (render.height - 1.5*auxFont.height - DMIFont.height)
-  );
+  nD = (grayBox['height'] - DMIFontXL.height)/grayBox['doubleRow'];
 
   // next: other fixed gubbins
   // you have basically 23 cap letters wide without even switching to Transit Board font; strongly consider two lines per entry (rt#,min,arrow on one row,
@@ -171,6 +164,21 @@ function draw(event) {
     (render.height - 1.25*auxFont.height)
   );
 
+  // Format date (now also time) as "YYYY. MRoman. DD. DName HH:MM"
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const seconds = settings['showSeconds'] ? `:${String(now.getSeconds()).padStart(2, "0")}` : '';
+  const dayName = DAYS[now.getDay()];
+  //const monthName = MONTHS[now.getMonth()]; // numeric month is better for digital displaying, it seems to me
+  const infoStr = `${String(now.getFullYear())}. ${String(now.getMonth()).padStart(2, "0")}. ${String(now.getDate()).padStart(2, "0")}. ${dayName} ${hours}:${minutes}${seconds}`;
+
+  // Draw datetime below the departure board
+  let infoWidth = render.getTextWidth(infoStr, DMIFontXL);
+  render.drawText(infoStr, DMIFontXL, orang,
+    (render.width - infoWidth - 20),
+    (render.height - 1.5*auxFont.height - DMIFont.height)
+  );
+
   // sign rows
   for (let n = 0; n < flop.length; n++) {
   // left corner and displaced-downward middle
@@ -180,7 +188,7 @@ ${flop[n]['tripHeadsign']}`, DMIFont, orang,
       grayBox['top']+n*grayBox['doubleRow']
     );
     // right corner
-    let rowRC = `${String(flop[n]['countdown'])}`;//${flop[n]['standArrow']}`;
+    let rowRC = `${String(flop[n]['countdown'])}'`;//${flop[n]['standArrow']}`;
     let rcWidth = render.getTextWidth(rowRC, DMIFont);
     render.drawText(rowRC, DMIFont, orang,
       (render.width - rcWidth - 20),
