@@ -1,7 +1,6 @@
 import Poco from "commodetto/Poco";
 import parseBMF from "commodetto/parseBMF";
 import parseRLE from "commodetto/parseRLE";
-//import places from "places"; // this time with feeling. and a semicolon at the very end 
 
 const places = {
   'CLARK0': {
@@ -69,32 +68,32 @@ const places = {
   }
 };
 
-/*function getFont(name, size) {
+function getFont(name, size) {
     const font = parseBMF(new Resource(`${name}-${size}.fnt`));
     font.bitmap = parseRLE(new Resource(`${name}-${size}-alpha.bm4`));
     return font;
-}*/
+}
 
 const render = new Poco(screen);
 
 // Fonts
 const DMIFont = new render.Font("Gothic-Regular", 18);
-//const DMIFont = getFont("Transit-Board-Regular", 18); // was new render.Font originally
+//const DMIFont = getFont("transit-board", 18); // was new render.Font originally
 const auxFont = new render.Font("Gothic-Bold", 14);
 
 // Colors
 const black = render.makeColor(0, 0, 0);
-const gray  = render.makeColor(60, 60, 60);
-const orang = render.makeColor(210, 150, 30);
+//const gray  = render.makeColor(60, 60, 60);
+const orang = render.makeColor(255, 100, 0);
 const white = render.makeColor(255, 255, 255);
 
 // Day and month names for date formatting
 const DAYS = ["V", "H", "K", "Sze", "Cs", "P", "Szo"];
-const MONTHS = ["I", "II", "III", "IV", "V", "VI",
-                "VII", "VIII", "IX", "X", "XI", "XII"];
+/*const MONTHS = ["I", "II", "III", "IV", "V", "VI",
+                "VII", "VIII", "IX", "X", "XI", "XII"];*/
 
 // test fields
-/*const testSign = [
+const testSign = [
   {"shortName":"M2","tripHeadsign":"Déli pályaudvar","countdown":1,"standArrow":"↑"},
   {"shortName":"19","tripHeadsign":"Kelenföld vasútállomás M","countdown":2,"standArrow":"↗"},
   {"shortName":"41","tripHeadsign":"Bécsi út / Vörösvári út","countdown":5,"standArrow":"↗"},
@@ -103,8 +102,28 @@ const MONTHS = ["I", "II", "III", "IV", "V", "VI",
   {"shortName":"19","tripHeadsign":"Kelenföld vasútállomás M","countdown":22,"standArrow":"↗"},
   {"shortName":"41","tripHeadsign":"Bécsi út / Vörösvári út","countdown":25,"standArrow":"↗"},
   {"shortName":"41","tripHeadsign":"Bécsi út / Vörösvári út","countdown":45,"standArrow":"↗"}
-];*/
+];
 const chosenSpot="BATYI0";
+
+// precomputations to pass between the secondly and minutely updates
+let flop = [];
+let grayBox = {
+  "top": 1.5*auxFont.height,
+  "overTop": 0.5*auxFont.height,
+  "height": render.height-(3*auxFont.height),
+  "doubleRow": 2*DMIFont.height
+};
+let nD = 4;
+
+function flip() {
+  // static test
+  flop = [{"shortName":"*","tripHeadsign":`MÁKOS TÉSZTA KFT.
+PEBBLE FUTÁR TESZTÜZEM
+áéíóöőúüűÁÉÍÓÖŐÚÜŰ`,"countdown":1,"standArrow":""}];
+  // halfway proper board flipping test
+  // how many departures to grab is precomputed above
+  //flop = testSign.slice(nD);
+}
 
 function draw(event) {
   const now = event.date;
@@ -112,23 +131,18 @@ function draw(event) {
   render.begin();
   render.fillRectangle(black, 0, 0, render.width, render.height);
   //render.fillRectangle(gray, 20, 1.5*auxFont.height, render.width-40, render.height-(3*auxFont.height));
-
-  // Format time as HH:MM
-  const hours = String(now.getHours()).padStart(2, "0");
-  const minutes = String(now.getMinutes()).padStart(2, "0");
-  const timeStr = `${hours}:${minutes}`;
-
-  /* legacy time renderer
-  // Center the time vertically (shifted up slightly to make room for date)
-  let timeWidth = render.getTextWidth(timeStr, auxFont);
-  render.drawText(timeStr, timeFont, white,
-    (render.width - timeWidth) / 2,
-    (render.height / 2) - timeFont.height + 5);*/
+  // recompute sizing stuff
+  grayBox['height'] = render.height-2*grayBox['top'];
+  grayBox['doubleRow'] = 2*DMIFont.height;
+  nD = grayBox['height']/grayBox['doubleRow'] - 1;
 
   // Format date (now also time) as "YYYY. MRoman. DD. DName HH:MM"
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const seconds = String(now.getSeconds()).padStart(2, "0");
   const dayName = DAYS[now.getDay()];
-  //const monthName = MONTHS[now.getMonth()];
-  const infoStr = `${String(now.getFullYear())}. ${String(now.getMonth()).padStart(2, "0")}. ${String(now.getDate()).padStart(2, "0")}. ${dayName} ${timeStr}`;
+  //const monthName = MONTHS[now.getMonth()]; // numeric month is better for digital displaying, it seems to me
+  const infoStr = `${String(now.getFullYear())}. ${String(now.getMonth()).padStart(2, "0")}. ${String(now.getDate()).padStart(2, "0")}. ${dayName} ${hours}:${minutes}:${seconds}`;
 
   // Draw datetime below the departure board
   let infoWidth = render.getTextWidth(infoStr, DMIFont);
@@ -143,14 +157,14 @@ function draw(event) {
   // on which note, revisit this heading later
   render.drawText("Járat", auxFont, white,
     20,
-    0.5*auxFont.height
+    grayBox['overTop']
   );
 
   const auxTopRight = "Indulás";
   let auxTopRightWidth = render.getTextWidth(auxTopRight, auxFont);
   render.drawText("Indulás", auxFont, white,
     (render.width - auxTopRightWidth - 20),
-    0.5*auxFont.height
+    grayBox['overTop']
   );
 
   render.drawText(places[chosenSpot]['parentName'], auxFont, white,
@@ -158,13 +172,18 @@ function draw(event) {
     (render.height - 1.25*auxFont.height)
   );
 
-  render.drawText("*MÁKOS TÉSZTA KFT.*\nPEBBLE FUTÁR TESZTÜZEM\náéíóöőúüűÁÉÍÓÖŐÚÜŰ", DMIFont, orang,
-    20,
-    1.5 * auxFont.height
-  );
+  // sign rows
+  for (let n = 0; n < flop.length; n++) {
+    render.drawText(`${flop[n]['shortName']}
+${flop[n]['tripHeadsign']}`, DMIFont, orang,
+      20,
+      grayBox['top']+n*grayBox['doubleRow']
+    );
+  }
 
   render.end();
 }
 
 // Update every minute (fires immediately when registered)
-watch.addEventListener("minutechange", draw);
+watch.addEventListener("secondchange", draw);
+watch.addEventListener("minutechange", flip);
