@@ -5,7 +5,7 @@
 	"modules": {
 		"*": "./main.js"
   },
-  "resources": {
+  "_resources": {
     "*-alpha": [
       {
         "source": "./assets/transit-board",

@@ -1,17 +1,16 @@
 import Poco from "commodetto/Poco";
 import parseBMF from "commodetto/parseBMF";
 import parseRLE from "commodetto/parseRLE";
+import Message from "pebble/message";
 
 const DEFAULT_SETTINGS = {
-  'showSeconds': false
+  showSeconds: false,
+  chosenSpot: "CLARK0",
+  choseBackFace: false
 };
-
-let settings = DEFAULT_SETTINGS;
 
 const places = {
   'CLARK0': {
-    'placeName': 'Clark Ádám tér (2/16-105-178-210/B Alagút/Vár felé)',
-    'defaultHeight':3,
     'parentID':'BKK_CS049785',
     'parentName':'Clark Ádám tér',
     'arrows': {
@@ -36,7 +35,6 @@ const places = {
     },
   },
   'BATYI0': {
-    'placeName': 'Batthyány tér M+H (tér közepe)',
     'parentID':'BKK_CSF00065',
     'parentName': 'Batthyány tér M+H',
     'arrows': {
@@ -74,6 +72,24 @@ const places = {
   }
 };
 
+function loadSettings() {
+  const stored = localStorage.getItem("settings");
+  if (stored) {
+    try {
+      return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
+    } catch (e) {
+      console.log("Failed to parse settings");
+    }
+  }
+  return { ...DEFAULT_SETTINGS };
+}
+
+function saveSettings() {
+    localStorage.setItem("settings", JSON.stringify(settings));
+}
+
+let settings = loadSettings();
+
 function getFont(name, size) {
     const font = parseBMF(new Resource(`${name}-${size}.fnt`));
     font.bitmap = parseRLE(new Resource(`${name}-${size}-alpha.bm4`));
@@ -90,7 +106,7 @@ const auxFont = new render.Font("Gothic-Bold", 18);
 
 // Colors
 const black = render.makeColor(0, 0, 0);
-//const gray  = render.makeColor(60, 60, 60);
+//const gray  = render.makeColor(80, 80, 80);
 const orang = render.makeColor(255, 100, 0);
 const white = render.makeColor(255, 255, 255);
 
@@ -110,7 +126,6 @@ const testSign = [
   {"shortName":"41","tripHeadsign":"Bécsi út / Vörösvári út","countdown":25,"standArrow":"↗"},
   {"shortName":"41","tripHeadsign":"Bécsi út / Vörösvári út","countdown":45,"standArrow":"↗"}
 ];
-const chosenSpot="BATYI0";
 
 // precomputations to pass between the secondly and minutely updates
 let flop = [];
@@ -132,11 +147,15 @@ PEBBLE FUTÁR TESZTÜZEM
   flop = testSign.slice(0,nD);
 }
 
-function draw(event) {
+function drawDisplay(event) {
   const now = event.date;
 
+  if (!settings.showSeconds) flip();
+  
   render.begin();
   render.fillRectangle(black, 0, 0, render.width, render.height);
+  /*render.fillRectangle(gray, grayBox['overTop'], grayBox['top'],
+    render.width-2*grayBox['overTop'], render.height - 2*grayBox['top']);*/
 
   // recompute sizing stuff
   grayBox['height'] = render.height-2*grayBox['top'];
@@ -148,26 +167,26 @@ function draw(event) {
   // headsign below. still small for the headsign tbr but we shall ball i think)
   // on which note, revisit this heading later
   render.drawText("Járat", auxFont, white,
-    20,
+    grayBox['overTop'],//20,
     grayBox['overTop']
   );
 
   const auxTopRight = "Indulás";
   let auxTopRightWidth = render.getTextWidth(auxTopRight, auxFont);
   render.drawText("Indulás", auxFont, white,
-    (render.width - auxTopRightWidth - 20),
+    (render.width - auxTopRightWidth - grayBox['overTop']),// - 20),
     grayBox['overTop']
   );
 
-  render.drawText(places[chosenSpot]['parentName'], auxFont, white,
-    20,
+  render.drawText(places[settings.chosenSpot]['parentName'], auxFont, white,
+    grayBox['overTop'],//20,
     (render.height - 1.25*auxFont.height)
   );
 
   // Format date (now also time) as "YYYY. MRoman. DD. DName HH:MM"
   const hours = String(now.getHours()).padStart(2, "0");
   const minutes = String(now.getMinutes()).padStart(2, "0");
-  const seconds = settings['showSeconds'] ? `:${String(now.getSeconds()).padStart(2, "0")}` : '';
+  const seconds = settings.showSeconds ? `:${String(now.getSeconds()).padStart(2, "0")}` : "";
   const dayName = DAYS[now.getDay()];
   //const monthName = MONTHS[now.getMonth()]; // numeric month is better for digital displaying, it seems to me
   const infoStr = `${String(now.getFullYear())}. ${String(now.getMonth()).padStart(2, "0")}. ${String(now.getDate()).padStart(2, "0")}. ${dayName} ${hours}:${minutes}${seconds}`;
@@ -175,23 +194,23 @@ function draw(event) {
   // Draw datetime below the departure board
   let infoWidth = render.getTextWidth(infoStr, DMIFontXL);
   render.drawText(infoStr, DMIFontXL, orang,
-    (render.width - infoWidth - 20),
-    (render.height - 1.5*auxFont.height - DMIFont.height)
+    (render.width - infoWidth - grayBox['overTop']),// - 20),
+    (render.height - grayBox['top'] - DMIFontXL.height)
   );
 
   // sign rows
   for (let n = 0; n < flop.length; n++) {
-  // left corner and displaced-downward middle
+    // left corner and displaced-downward middle
     render.drawText(`${flop[n]['shortName']}
 ${flop[n]['tripHeadsign']}`, DMIFont, orang,
-      20,
+      grayBox['overTop'],//20,
       grayBox['top']+n*grayBox['doubleRow']
     );
     // right corner
     let rowRC = `${String(flop[n]['countdown'])}'`;//${flop[n]['standArrow']}`;
     let rcWidth = render.getTextWidth(rowRC, DMIFont);
     render.drawText(rowRC, DMIFont, orang,
-      (render.width - rcWidth - 20),
+      (render.width - rcWidth - grayBox['overTop']),// - 20),
       grayBox['top']+n*grayBox['doubleRow']
     );
   }
@@ -199,6 +218,44 @@ ${flop[n]['tripHeadsign']}`, DMIFont, orang,
   render.end();
 }
 
-// Update every minute (fires immediately when registered)
-watch.addEventListener("secondchange", draw);
-watch.addEventListener("minutechange", flip);
+function patchEvents() {
+  if (settings.showSeconds) {
+    watch.removeEventListener("secondchange", drawDisplay);
+    watch.removeEventListener("minutechange", drawDisplay);
+    watch.removeEventListener("minutechange", flip);
+    watch.addEventListener("secondchange", drawDisplay);
+    watch.addEventListener("minutechange", flip);
+  } else {
+    watch.removeEventListener("secondchange", drawDisplay);
+    watch.removeEventListener("minutechange", drawDisplay);
+    watch.removeEventListener("minutechange", flip);
+    watch.addEventListener("minutechange", drawDisplay); // drawDisplay will trip flip() for itself every minute for order reasons
+  }
+}
+
+patchEvents();
+
+// messaging
+const message = new Message({
+  keys: ["showSeconds","chosenSpot","choseBackFace"],
+  onReadable() {
+    const msg = this.read();
+
+    const shS = msg.get("showSeconds");
+    if (shS !== undefined) {
+      settings.showSeconds = (shS === 1);
+    }
+    const spot = msg.get("chosenSpot");
+    if (spot !== undefined) {
+      settings.chosenSpot = spot;
+    }
+    const bf = msg.get("choseBackFace");
+    if (bf !== undefined) {
+      settings.choseBackFace = (bf === 1);
+    }
+
+    saveSettings();
+    patchEvents();
+    drawDisplay();
+  }
+});

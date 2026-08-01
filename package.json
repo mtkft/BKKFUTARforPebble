@@ -1,19 +1,25 @@
 {
     "author": "MTKft.",
     "dependencies": {
+        "@moddable/pebbleproxy": "^0.1.8",
+        "@rebble/clay": "^1.0.10",
         "@rockiey/pandasjs": "^1.0.1"
     },
     "keywords": [
         "pebble-app"
     ],
-    "name": "bkk-fut-r",
+    "name": "bkk-futar",
     "pebble": {
         "capabilities": [
             "configurable"
         ],
         "displayName": "BKK FUT\u00c1R",
         "enableMultiJS": true,
-        "messageKeys": [],
+        "messageKeys": [
+            "showSeconds",
+            "chosenSpot",
+            "choseBackFace"
+        ],
         "projectType": "moddable",
         "resources": {
             "media": []
