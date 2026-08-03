@@ -1,6 +1,4 @@
 import Poco from "commodetto/Poco";
-import parseBMF from "commodetto/parseBMF";
-import parseRLE from "commodetto/parseRLE";
 import Message from "pebble/message";
 
 const DEFAULT_SETTINGS = {
@@ -90,18 +88,13 @@ function saveSettings() {
 
 let settings = loadSettings();
 
-function getFont(name, size) {
-    const font = parseBMF(new Resource(`${name}-${size}.fnt`));
-    font.bitmap = parseRLE(new Resource(`${name}-${size}-alpha.bm4`));
-    return font;
-}
+let lastDate = new Date(); // for if you call draw() without an event
 
 const render = new Poco(screen);
 
 // Fonts
 const DMIFont = new render.Font("Gothic-Regular", 18);
 const DMIFontXL = new render.Font("Gothic-Regular", 24);
-//const DMIFont = getFont("transit-board", 18); // was new render.Font originally
 const auxFont = new render.Font("Gothic-Bold", 18);
 
 // Colors
@@ -118,7 +111,7 @@ const DAYS = ["V", "H", "K", "Sze", "Cs", "P", "Szo"];
 // test fields
 const testSign = [
   {"shortName":"M2","tripHeadsign":"Déli pályaudvar","countdown":1,"standArrow":"↑"},
-  {"shortName":"19","tripHeadsign":"Kelenföld vasútállomás M","countdown":2,"standArrow":"↗"},
+  {"shortName":"777","tripHeadsign":"Erzsébet kir.né útja, alulj.","countdown":2,"standArrow":"↗"},
   {"shortName":"41","tripHeadsign":"Bécsi út / Vörösvári út","countdown":5,"standArrow":"↗"},
   {"shortName":"41","tripHeadsign":"Kamaraerdei Ifj. Park","countdown":12,"standArrow":"↗"},
   {"shortName":"19","tripHeadsign":"Bécsi út / Vörösvári út","countdown":15,"standArrow":"↗"},
@@ -148,7 +141,8 @@ PEBBLE FUTÁR TESZTÜZEM
 }
 
 function drawDisplay(event) {
-  const now = event.date;
+  const now = event?.date ?? lastDate;
+  if (event?.date) lastDate = event.date;
 
   if (!settings.showSeconds) flip();
   
@@ -189,7 +183,7 @@ function drawDisplay(event) {
   const seconds = settings.showSeconds ? `:${String(now.getSeconds()).padStart(2, "0")}` : "";
   const dayName = DAYS[now.getDay()];
   //const monthName = MONTHS[now.getMonth()]; // numeric month is better for digital displaying, it seems to me
-  const infoStr = `${String(now.getFullYear())}. ${String(now.getMonth()).padStart(2, "0")}. ${String(now.getDate()).padStart(2, "0")}. ${dayName} ${hours}:${minutes}${seconds}`;
+  const infoStr = `${String(now.getFullYear())}. ${String(now.getMonth()+1).padStart(2, "0")}. ${String(now.getDate()).padStart(2, "0")}. ${dayName} ${hours}:${minutes}${seconds}`;
 
   // Draw datetime below the departure board
   let infoWidth = render.getTextWidth(infoStr, DMIFontXL);
