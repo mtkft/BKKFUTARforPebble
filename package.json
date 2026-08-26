@@ -2,8 +2,7 @@
     "author": "MTKft.",
     "dependencies": {
         "@moddable/pebbleproxy": "^0.1.8",
-        "@rebble/clay": "^1.0.10",
-        "@rockiey/pandasjs": "^1.0.1"
+        "@rebble/clay": "^1.0.10"
     },
     "keywords": [
         "pebble-app"
@@ -18,7 +17,8 @@
         "messageKeys": [
             "showSeconds",
             "chosenSpot",
-            "choseBackFace"
+            "choseBackFace",
+            "apiURL"
         ],
         "projectType": "moddable",
         "resources": {
@@ -33,5 +33,5 @@
             "watchface": true
         }
     },
-    "version": "0.1.0"
+    "version": "0.1.1"
 }

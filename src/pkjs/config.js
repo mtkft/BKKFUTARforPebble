@@ -54,6 +54,12 @@ module.exports = [
         "messageKey": "choseBackFace",
         "label": "Back face display (only affects arrows pointing at stands)",
         "defaultValue": false
+      },
+      {
+        "type": "input",
+        "messageKey": "apiURL",
+        "defaultValue": "",
+        "label": "FUTÁR API translator endpoint",
       }
     ]
   },

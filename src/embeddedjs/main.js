@@ -4,7 +4,8 @@ import Message from "pebble/message";
 const DEFAULT_SETTINGS = {
   showSeconds: false,
   chosenSpot: "CLARK0",
-  choseBackFace: false
+  choseBackFace: false,
+  apiURL: "http://192.168.8.196:8001/futar/stop"
 };
 
 const places = {
@@ -86,6 +87,19 @@ function saveSettings() {
     localStorage.setItem("settings", JSON.stringify(settings));
 }
 
+async function getFromTranslator() {
+  const url = new URL(settings.apiURL);
+  url.search = new URLSearchParams({
+    chosenSpot: settings.chosenSpot,
+    chosenHeight: settings.chosenHeight,
+    choseBackFace: settings.choseBackFace
+  });
+  console.log(url);
+  const response = await fetch(url);
+  const rdata = await response.json();
+	return rdata;//projected;
+}
+
 let settings = loadSettings();
 
 let lastDate = new Date(); // for if you call draw() without an event
@@ -99,7 +113,6 @@ const auxFont = new render.Font("Gothic-Bold", 18);
 
 // Colors
 const black = render.makeColor(0, 0, 0);
-//const gray  = render.makeColor(80, 80, 80);
 const orang = render.makeColor(255, 100, 0);
 const white = render.makeColor(255, 255, 255);
 
@@ -112,11 +125,7 @@ const DAYS = ["V", "H", "K", "Sze", "Cs", "P", "Szo"];
 const testSign = [
   {"shortName":"M2","tripHeadsign":"Déli pályaudvar","countdown":1,"standArrow":"↑"},
   {"shortName":"777","tripHeadsign":"Erzsébet kir.né útja, alulj.","countdown":2,"standArrow":"↗"},
-  {"shortName":"41","tripHeadsign":"Bécsi út / Vörösvári út","countdown":5,"standArrow":"↗"},
-  {"shortName":"41","tripHeadsign":"Kamaraerdei Ifj. Park","countdown":12,"standArrow":"↗"},
   {"shortName":"19","tripHeadsign":"Bécsi út / Vörösvári út","countdown":15,"standArrow":"↗"},
-  {"shortName":"19","tripHeadsign":"Kelenföld vasútállomás M","countdown":22,"standArrow":"↗"},
-  {"shortName":"41","tripHeadsign":"Bécsi út / Vörösvári út","countdown":25,"standArrow":"↗"},
   {"shortName":"41","tripHeadsign":"Bécsi út / Vörösvári út","countdown":45,"standArrow":"↗"}
 ];
 
@@ -130,14 +139,14 @@ let grayBox = {
 };
 let nD = 4;
 
-function flip() {
-  // static test
-  /*flop = [{"shortName":"*","tripHeadsign":`MÁKOS TÉSZTA KFT.
-PEBBLE FUTÁR TESZTÜZEM
-áéíóöőúüűÁÉÍÓÖŐÚÜŰ`,"countdown":1,"standArrow":""}];*/
+async function flip() {
   // halfway proper board flipping test
   // how many departures to grab is precomputed above
-  flop = testSign.slice(0,nD);
+  try {
+    flop = getFromTranslator();
+  } catch (e) {
+    flop = testSign.slice(0,nD);
+  }
 }
 
 function drawDisplay(event) {
@@ -157,9 +166,6 @@ function drawDisplay(event) {
   nD = (grayBox['height'] - DMIFontXL.height)/grayBox['doubleRow'];
 
   // next: other fixed gubbins
-  // you have basically 23 cap letters wide without even switching to Transit Board font; strongly consider two lines per entry (rt#,min,arrow on one row,
-  // headsign below. still small for the headsign tbr but we shall ball i think)
-  // on which note, revisit this heading later
   render.drawText("Járat", auxFont, white,
     grayBox['overTop'],//20,
     grayBox['overTop']
@@ -182,15 +188,7 @@ function drawDisplay(event) {
   const minutes = String(now.getMinutes()).padStart(2, "0");
   const seconds = settings.showSeconds ? `:${String(now.getSeconds()).padStart(2, "0")}` : "";
   const dayName = DAYS[now.getDay()];
-  //const monthName = MONTHS[now.getMonth()]; // numeric month is better for digital displaying, it seems to me
   const infoStr = `${String(now.getFullYear())}. ${String(now.getMonth()+1).padStart(2, "0")}. ${String(now.getDate()).padStart(2, "0")}. ${dayName} ${hours}:${minutes}${seconds}`;
-
-  // Draw datetime below the departure board
-  let infoWidth = render.getTextWidth(infoStr, DMIFontXL);
-  render.drawText(infoStr, DMIFontXL, orang,
-    (render.width - infoWidth - grayBox['overTop']),// - 20),
-    (render.height - grayBox['top'] - DMIFontXL.height)
-  );
 
   // sign rows
   for (let n = 0; n < flop.length; n++) {
@@ -201,7 +199,8 @@ ${flop[n]['tripHeadsign']}`, DMIFont, orang,
       grayBox['top']+n*grayBox['doubleRow']
     );
     // right corner
-    let rowRC = `${String(flop[n]['countdown'])}'`;//${flop[n]['standArrow']}`;
+    let rowRC = `${String(flop[n]['countdown'])}`;
+    //${flop[n]['standArrow']}`;
     let rcWidth = render.getTextWidth(rowRC, DMIFont);
     render.drawText(rowRC, DMIFont, orang,
       (render.width - rcWidth - grayBox['overTop']),// - 20),
@@ -231,7 +230,7 @@ patchEvents();
 
 // messaging
 const message = new Message({
-  keys: ["showSeconds","chosenSpot","choseBackFace"],
+  keys: ["showSeconds","chosenSpot","choseBackFace","apiKey"],
   onReadable() {
     const msg = this.read();
 
@@ -246,6 +245,10 @@ const message = new Message({
     const bf = msg.get("choseBackFace");
     if (bf !== undefined) {
       settings.choseBackFace = (bf === 1);
+    }
+    const keee = msg.get("apiURL");
+    if (keee !== undefined) {
+      settings.apiURL = keee;
     }
 
     saveSettings();
